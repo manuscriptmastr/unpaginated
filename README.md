@@ -1,12 +1,11 @@
-# fetchAll(theThings)
+# fetch-all
 
-Given:
+No one likes paginated results. `fetchAll()`, given:
 1. A fetcher that accepts a page/offset and limit,
 2. A limit (optional, default 100)
 3. A number or function (sync/async) that retrieves the total count (optional),
 retrieve all paginated entries as efficiently as possible.
 
-Example:
 ```js
 const { fetchAll } = require('fetch-all');
 const fetch = require('node-fetch');
