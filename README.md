@@ -16,7 +16,7 @@ const fetchPosts = (page = 1, limit = 100) =>
   fetch(`${url}/posts?_page=${page}&_limit=${limit}`)
     .then(res => res.json());
 
-const getPostsCount; // imagine we can ask the API for a total count
+const getPostsCount = async () => {...}; // imagine we can ask the API for a total count
 
 fetchAll(fetchPosts);
 // makes 1 request to retrieve all 100 posts
@@ -32,7 +32,7 @@ fetchAll(fetchPost, 20, getPostsCount);
 // While this requires an extra call, it is drastically faster.
 ```
 
-The following utilities are included to help `fetchAll()` speak the language of your fetchers:
+The following utilities are included to help `fetchAll()` speak the language of your API:
   - `page(pageNum, zeroIndex = false)`
   - `offset(pageNum, limit, zeroIndex = true)`
 
