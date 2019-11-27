@@ -46,7 +46,7 @@ const fetchUsers = (offset = 0, limit = 100) =>
   fetch(`${url}/users?offset=${offset}&limit=${limit}`)
     .then(res => res.json());
 
-const users = await fetchAll(
+fetchAll(
   (page, limit) => fetchUsers(offset(page, limit), limit),
   200
 );
