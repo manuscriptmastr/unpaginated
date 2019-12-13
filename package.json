@@ -1,11 +1,11 @@
 {
-  "name": "fetch-all",
+  "name": "depaginate",
   "version": "1.0.0",
-  "description": "Given a fetcher that expects a page or offset and a limit, orchestrate a master fetcher to retrieve all paginated entries as efficiently as possible.",
-  "main": "fetch-all.js",
+  "description": "Given a operation that expects a page or offset and a limit, orchestrate a master function to retrieve all paginated entries as efficiently as possible.",
+  "main": "depaginate.js",
   "scripts": {
-    "start": "node fetch-all.js",
-    "test": "node fetch-all.test.js"
+    "start": "node depaginate.js",
+    "test": "node depaginate.test.js"
   },
   "author": "Joshua Martin",
   "license": "ISC",

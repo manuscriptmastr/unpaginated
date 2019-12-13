@@ -1,13 +1,12 @@
-const assert = require('assert');
-const eq = assert.deepStrictEqual;
+const { deepStrictEqual: eq } = require('assert');
 const fetch = require('node-fetch');
 const { range } = require('lodash/fp');
 const {
   page,
   offset,
   totalPages,
-  fetchAll,
-} = require('./fetch-all');
+  depaginate,
+} = require('./depaginate');
 
 const url = 'https://jsonplaceholder.typicode.com';
 
@@ -23,7 +22,7 @@ eq(offset(2, 100), 100);
 eq(offset(1, 100, false), 1);
 eq(offset(2, 100, false), 101);
 
-// Test that, given total and limit, totalPages returns number of pages to fetch
+// Test that, given total and limit, totalPages returns number of pages
 eq(totalPages(12, 1), 12);
 eq(totalPages(12, 2), 6);
 eq(totalPages(13, 2), 7);
@@ -36,28 +35,28 @@ const fetchPostCount = () =>
   fetchPosts(`${url}/posts`)
     .then(posts => posts.length);
 
-// Test basic functionality: fetcher, limit, total
-fetchAll(fetchPosts, 20, 100)
+// Test basic functionality: function, limit, total
+depaginate(fetchPosts, 20, 100)
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
 // Test that "total" arg can be a function
-fetchAll(fetchPosts, 20, fetchPostCount)
+depaginate(fetchPosts, 20, fetchPostCount)
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
-// Test that fetcher makes an extra call to get leftover entries
-fetchAll(fetchPosts, 19, 100)
+// Test that function makes an extra call to get leftover entries
+depaginate(fetchPosts, 19, 100)
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
-// Test that fetcher switches to exploratory implementation
+// Test that function switches to exploratory implementation
 // when total arg is not passed in
-fetchAll(fetchPosts, 20)
+depaginate(fetchPosts, 20)
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
-// Test that fetcher defaults to limit 100
-fetchAll(fetchPosts)
+// Test that function defaults to limit 100
+depaginate(fetchPosts)
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
