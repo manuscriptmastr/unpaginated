@@ -10,12 +10,12 @@ const offset = (pageNum, limit, zeroIndex = true) =>
 const totalPages = (total, limit) =>
   (total - (total % limit)) / limit + (total % limit > 0 ? 1 : 0);
 
-const depaginate = (func, limit = 100, total) =>
+const unpaginated = (func, limit = 100, total) =>
   total === undefined
-    ? depaginateWithoutCount(func, limit)
-    : depaginateWithCount(func, limit, total);
+    ? unpaginatedWithoutCount(func, limit)
+    : unpaginatedWithCount(func, limit, total);
 
-const depaginateWithCount = (func, limit, total) => async () => {
+const unpaginatedWithCount = (func, limit, total) => async () => {
   total = isFunction(total) ? await total() : total;
   const pages = range(1, totalPages(total, limit) + 1);
   const allThings = await Promise.all(pages.map((page) =>
@@ -24,7 +24,7 @@ const depaginateWithCount = (func, limit, total) => async () => {
   return unnest(allThings);
 };
 
-const depaginateWithoutCount = (func, limit) => async () => {
+const unpaginatedWithoutCount = (func, limit) => async () => {
   let entries = [];
   let done = false;
   let page = 1;
@@ -39,4 +39,4 @@ const depaginateWithoutCount = (func, limit) => async () => {
   return entries;
 };
 
-module.exports = { depaginate, page, offset, totalPages };
+module.exports = { unpaginated, page, offset, totalPages };

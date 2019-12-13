@@ -1,11 +1,11 @@
 {
-  "name": "depaginate",
+  "name": "unpaginated",
   "version": "1.0.0",
   "description": "Given a operation that expects a page or offset and a limit, orchestrate a master function to retrieve all paginated entries as efficiently as possible.",
-  "main": "depaginate.js",
+  "main": "unpaginated.js",
   "scripts": {
-    "start": "node depaginate.js",
-    "test": "node depaginate.test.js"
+    "start": "node unpaginated.js",
+    "test": "node unpaginated.test.js"
   },
   "author": "Joshua Martin",
   "license": "ISC",

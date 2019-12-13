@@ -5,8 +5,8 @@ const {
   page,
   offset,
   totalPages,
-  depaginate,
-} = require('./depaginate');
+  unpaginated,
+} = require('./unpaginated');
 
 const url = 'https://jsonplaceholder.typicode.com';
 
@@ -36,27 +36,27 @@ const fetchPostCount = () =>
     .then(posts => posts.length);
 
 // Test basic functionality: function, limit, total
-depaginate(fetchPosts, 20, 100)()
+unpaginated(fetchPosts, 20, 100)()
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
 // Test that "total" arg can be a function
-depaginate(fetchPosts, 20, fetchPostCount)()
+unpaginated(fetchPosts, 20, fetchPostCount)()
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
 // Test that function makes an extra call to get leftover entries
-depaginate(fetchPosts, 19, 100)()
+unpaginated(fetchPosts, 19, 100)()
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
 // Test that function switches to exploratory implementation
 // when total arg is not passed in
-depaginate(fetchPosts, 20)()
+unpaginated(fetchPosts, 20)()
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
 
 // Test that function defaults to limit 100
-depaginate(fetchPosts)()
+unpaginated(fetchPosts)()
   .then(posts => posts.map(u => u.id))
   .then(ids => eq(ids, range(1, 101)));
