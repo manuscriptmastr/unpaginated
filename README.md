@@ -18,16 +18,16 @@ const fetchPosts = (page = 1, limit = 100) =>
 
 const getPostsCount = async () => {...}; // imagine we can ask the API for a total count
 
-depaginate(fetchPosts);
+depaginate(fetchPosts)();
 // makes 1 request to retrieve all 100 posts
 
-depaginate(fetchPosts, 20);
+depaginate(fetchPosts, 20)();
 // makes 6 requests, one at a time. 5 returned 20 results, 6th returned 0
 
-depaginate(fetchPosts, 20, 100);
+depaginate(fetchPosts, 20, 100)();
 // makes 5 requests concurrently because total is supplied
 
-depaginate(fetchPost, 20, getPostsCount);
+depaginate(fetchPost, 20, getPostsCount)();
 // makes 6 requests: 1 to retrieve total, then 5 concurrently to retrieve posts.
 // While this requires an extra call, it is drastically faster.
 ```
@@ -49,5 +49,5 @@ const fetchUsers = (offset = 0, limit = 100) =>
 depaginate(
   (page, limit) => fetchUsers(offset(page, limit), limit),
   200
-);
+)();
 ```
