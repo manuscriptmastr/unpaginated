@@ -4,7 +4,7 @@ No one likes paginated results. `depaginate()`, given:
 1. A function that accepts a page/offset and limit,
 2. A limit (optional, default 100)
 3. A number or function (sync/async) that retrieves the total count (optional),
-retrieve all paginated entries as efficiently as possible.
+returns an unpaginated function.
 
 ```js
 const { depaginate } = require('depaginate');
