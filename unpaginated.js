@@ -1,7 +1,5 @@
 import R from 'ramda';
-const { unnest, range } = R;
-
-const isFunction = (T) => typeof T === 'function';
+const { is, unnest, range } = R;
 
 // Helpers for functions to resolve page 1, 2, 3... to their own needs
 export const page = (pageNum, zeroIndex = false) =>
@@ -19,7 +17,7 @@ const unpaginated = (func, limit = 100, total) =>
     : unpaginatedWithCount(func, limit, total);
 
 const unpaginatedWithCount = (func, limit, total) => async () => {
-  total = isFunction(total) ? await total() : total;
+  total = is(Function, total) ? await total() : total;
   const pages = range(1, totalPages(total, limit) + 1);
   const allThings = await Promise.all(pages.map((page) =>
     func(page, limit)

@@ -47,5 +47,4 @@ unpaginated(fetchPosts, 19, 100)().then(eq(POSTS));
 unpaginated(fetchPosts, 20)().then(eq(POSTS));
 
 // Test that function defaults to limit 100
-unpaginated(fetchPosts)()
-  .then(eq(POSTS));
+unpaginated(fetchPosts)().then(eq(POSTS));
