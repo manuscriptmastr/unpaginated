@@ -1,13 +1,16 @@
-const { unnest, range, isFunction } = require('lodash/fp');
+import R from 'ramda';
+const { unnest, range } = R;
+
+const isFunction = (T) => typeof T === 'function';
 
 // Helpers for functions to resolve page 1, 2, 3... to their own needs
-const page = (pageNum, zeroIndex = false) =>
+export const page = (pageNum, zeroIndex = false) =>
   zeroIndex ? pageNum - 1 : pageNum;
 
-const offset = (pageNum, limit, zeroIndex = true) =>
+export const offset = (pageNum, limit, zeroIndex = true) =>
   (pageNum - 1) * limit + (zeroIndex ? 0 : 1);
 
-const totalPages = (total, limit) =>
+export const totalPages = (total, limit) =>
   (total - (total % limit)) / limit + (total % limit > 0 ? 1 : 0);
 
 const unpaginated = (func, limit = 100, total) =>
@@ -39,4 +42,4 @@ const unpaginatedWithoutCount = (func, limit) => async () => {
   return entries;
 };
 
-module.exports = { unpaginated, page, offset, totalPages };
+export default unpaginated;

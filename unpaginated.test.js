@@ -1,14 +1,15 @@
-const { deepStrictEqual: eq } = require('assert');
-const fetch = require('node-fetch');
-const { range } = require('lodash/fp');
-const {
+import { deepStrictEqual } from 'assert';
+import R from 'ramda';
+const { curryN, range } = R;
+import unpaginated, {
   page,
   offset,
-  totalPages,
-  unpaginated,
-} = require('./unpaginated');
+  totalPages
+} from './unpaginated.js';
+const eq = curryN(2, deepStrictEqual);
 
-const url = 'https://jsonplaceholder.typicode.com';
+// [{ id: number }]
+const POSTS = range(1, 101).map(num => ({ id: num }));
 
 // Test that, given page 1, 2, 3..., page(num, zeroIndex) works like:
 eq(page(1), 1);
@@ -27,36 +28,24 @@ eq(totalPages(12, 1), 12);
 eq(totalPages(12, 2), 6);
 eq(totalPages(13, 2), 7);
 
-const fetchPosts = (page = 1, limit = 100) =>
-  fetch(`${url}/posts?_page=${page}&_limit=${limit}`)
-    .then(res => res.json());
+const fetchPosts = async (page = 1, limit = 100) =>
+  POSTS.slice(offset(page, limit), offset(page + 1, limit));
 
-const fetchPostCount = () =>
-  fetchPosts(`${url}/posts`)
-    .then(posts => posts.length);
+const fetchPostCount = async () => POSTS.length;
 
 // Test basic functionality: function, limit, total
-unpaginated(fetchPosts, 20, 100)()
-  .then(posts => posts.map(u => u.id))
-  .then(ids => eq(ids, range(1, 101)));
+unpaginated(fetchPosts, 20, 100)().then(eq(POSTS));
 
 // Test that "total" arg can be a function
-unpaginated(fetchPosts, 20, fetchPostCount)()
-  .then(posts => posts.map(u => u.id))
-  .then(ids => eq(ids, range(1, 101)));
+unpaginated(fetchPosts, 20, fetchPostCount)().then(eq(POSTS));
 
 // Test that function makes an extra call to get leftover entries
-unpaginated(fetchPosts, 19, 100)()
-  .then(posts => posts.map(u => u.id))
-  .then(ids => eq(ids, range(1, 101)));
+unpaginated(fetchPosts, 19, 100)().then(eq(POSTS));
 
 // Test that function switches to exploratory implementation
 // when total arg is not passed in
-unpaginated(fetchPosts, 20)()
-  .then(posts => posts.map(u => u.id))
-  .then(ids => eq(ids, range(1, 101)));
+unpaginated(fetchPosts, 20)().then(eq(POSTS));
 
 // Test that function defaults to limit 100
 unpaginated(fetchPosts)()
-  .then(posts => posts.map(u => u.id))
-  .then(ids => eq(ids, range(1, 101)));
+  .then(eq(POSTS));

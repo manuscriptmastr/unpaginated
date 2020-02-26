@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Given a operation that expects a page or offset and a limit, orchestrate a master function to retrieve all paginated entries as efficiently as possible.",
   "main": "unpaginated.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Joshua Martin",
   "license": "ISC",
   "dependencies": {
-    "lodash": "^4.17.15",
-    "node-fetch": "^2.6.0"
-  }
+    "ramda": "^0.27.0"
+  },
+  "type": "module"
 }
