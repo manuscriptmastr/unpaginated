@@ -29,7 +29,7 @@ const fetchPostsWithTotal = (page = 1, limit = 100) =>
     .then(({ data, total }) => ({ data, total }));
 
 unpaginated(fetchPostsWithTotal, 20);
-// makes 1 request, serially, then 4 concurrently
+// makes 1 request serially, then 4 concurrently
 ```
 
 The following utilities are included to help `unpaginated()` speak the language of your API:
