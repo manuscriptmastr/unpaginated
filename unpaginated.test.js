@@ -55,3 +55,10 @@ test('unpaginated(fn, limit) calls first function and chooses concurrency for le
   t.deepEqual(await unpaginated(fetchPostsWithTotal, 20), POSTS);
   t.deepEqual(times, 5);
 });
+
+test('unpaginated(fn) defaults limit to 100', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 2);
+});

@@ -14,13 +14,13 @@ const fetchPosts = (page = 1, limit = 100) =>
     .then(payload => payload.data);
 
 unpaginated(fetchPosts);
-// makes 1 request to retrieve all 100 posts
+// makes 2 requests, serially. 1st returned 100 results, 2nd returned 0
 
 unpaginated(fetchPosts, 20);
-// makes 6 requests, one at a time. 5 returned 20 results, 6th returned 0
+// makes 6 requests, serially. First 5 returned 20 results, 6th returned 0
 
 unpaginated(fetchPosts, 20, 100);
-// makes 5 requests concurrently because total is supplied
+// makes 5 requests, concurrently.
 
 // You can also return a payload object with data and total properties set.
 const fetchPostsWithTotal = (page = 1, limit = 100) =>
@@ -29,7 +29,7 @@ const fetchPostsWithTotal = (page = 1, limit = 100) =>
     .then(({ data, total }) => ({ data, total }));
 
 unpaginated(fetchPostsWithTotal, 20);
-// makes 1 request, then remaining 4 concurrently
+// makes 1 request, serially, then 4 concurrently
 ```
 
 The following utilities are included to help `unpaginated()` speak the language of your API:

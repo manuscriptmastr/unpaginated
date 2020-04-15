@@ -43,7 +43,7 @@ export const unpaginatedSerial = async (fn, limit, startPage = 1) => {
  * await unpaginated(fetchUsers, 20, 100);
  *   // => Array of all 100 users
  */
-const unpaginated = async (fn, limit, total) => {
+const unpaginated = async (fn, limit = 100, total) => {
   if (is(Number, total)) {
     return unpaginatedConcurrent(fn, limit, total, 1);
   }
