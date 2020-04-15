@@ -1,10 +1,9 @@
 {
   "name": "unpaginated",
-  "version": "1.1.0",
-  "description": "Given a operation that expects a page or offset and a limit, orchestrate a master function to retrieve all paginated entries as efficiently as possible.",
+  "version": "2.0.0",
   "main": "unpaginated.js",
   "scripts": {
-    "test": "ava --verbose"
+    "test": "ava --verbose --watch"
   },
   "author": "Joshua Martin",
   "license": "ISC",

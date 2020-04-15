@@ -1,57 +1,72 @@
 import R from 'ramda';
-const { both, curry, has, is, range, unnest } = R;
-
-// Helpers for functions to resolve page 1, 2, 3... to their own needs
-export const page = (pageNum, zeroIndex = false) =>
-  zeroIndex ? pageNum - 1 : pageNum;
+const { andThen, both, has, is, pipeWith, prop, range, unnest } = R;
 
 export const offset = (pageNum, limit, zeroIndex = true) =>
   (pageNum - 1) * limit + (zeroIndex ? 0 : 1);
 
+export const page = (pageNum, zeroIndex = false) =>
+  zeroIndex ? pageNum - 1 : pageNum;
+
 export const totalPages = (total, limit) =>
   (total - (total % limit)) / limit + (total % limit > 0 ? 1 : 0);
 
-export const dataTotal = curry(async (toData, toTotal, result) => ({ data: await toData(result), total: toTotal(result) }));
-const isDataTotal = both(has('data'), has('total'));
-
-const unpaginated = (func, limit = 100, total) =>
-  total === undefined
-    ? unpaginatedWithoutCount(func, limit)
-    : unpaginatedWithCount(func, limit, total);
-
-const unpaginatedWithCount = async (func, limit, total, startPage = 1) => {
-  const _total = is(Function, total) ? await total() : total;
-  const pages = range(startPage, totalPages(_total, limit) + 1);
-  const allThings = await Promise.all(pages.map(page =>
-    func(page, limit)
-  ));
-  return unnest(allThings);
+const unpaginatedConcurrent = (fn, limit, total, startPage = 1) => {
+  const pages = range(startPage, totalPages(total, limit) + 1);
+  return Promise.all(pages.map(page => fn(page, limit))).then(unnest);
 };
 
-const unpaginatedWithoutCount = async (func, limit) => {
-  const firstEntries = await func(1, limit);
+export const unpaginatedSerial = async (fn, limit, startPage = 1) => {
+  let entries = [];
+  let done = false;
+  let page = startPage;
 
-  if (isDataTotal(firstEntries)) {
+  while (!done) {
+    const newEntries = await fn(page, limit);
+    entries = entries.concat(newEntries);
+    done = newEntries.length < limit;
+    page += 1;
+  };
+
+  return entries;
+};
+
+/**
+ * Executes a paginated function over all pages, preferring concurrency where possible.
+ * @async
+ * @template T
+ * @param {(page: number, limit: number) => Promise<T[] | { data: T[], total: number }>} fn
+ * @param {number} limit
+ * @param {number} [total]
+ * @returns {Promise<T[]>} An array of all entries
+ * @example
+ * const fetchUsers = (page, limit) => fetch(`/users?page=${page}&limit=${limit}`).then(res => res.json());
+ * await unpaginated(fetchUsers, 20, 100);
+ *   // => Array of all 100 users
+ */
+const unpaginated = async (fn, limit, total) => {
+  if (is(Number, total)) {
+    return unpaginatedConcurrent(fn, limit, total, 1);
+  }
+
+  const firstEntries = await fn(1, limit);
+  const isDataObject = both(has('data'), has('total'));
+
+  if (isDataObject(firstEntries)) {
     const { data, total } = firstEntries;
     if (data.length >= total) {
       return data;
+    } else {
+      const funcDataOnly = pipeWith(andThen, [fn, prop('data')]);
+      const leftOverEntries = await unpaginatedConcurrent(funcDataOnly, limit, total, 2);
+      return [...data, ...leftOverEntries];
     }
-    const funcDataOnly = (...args) => func(...args).then(({ data }) => data);
-    const leftOverEntries = await unpaginatedWithCount(funcDataOnly, limit, total, 2);
-    return data.concat(leftOverEntries);
   } else {
-    let entries = firstEntries;
-    let done = firstEntries.length < limit;
-    let page = 2;
-
-    while (!done) {
-      const newEntries = await func(page, limit);
-      entries = entries.concat(newEntries);
-      done = newEntries.length < limit;
-      page++;
-    };
-
-    return entries;
+    if (firstEntries.length < limit) {
+      return firstEntries;
+    } else {
+      const leftOverEntries = await unpaginatedSerial(fn, limit, 2);
+      return [...firstEntries, ...leftOverEntries];
+    }
   }
 };
 

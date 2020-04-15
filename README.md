@@ -1,53 +1,50 @@
 # unpaginated
 
-No one likes paginated results. `unpaginated()`, given:
-1. A function that accepts a page/offset and limit,
-2. A limit (optional, default 100)
-3. A number or function (sync/async) that retrieves the total count (optional),
-returns an unpaginated function.
+No one likes paginated results. `unpaginated()` executes a paginated function until done.
 
 ```js
-const { unpaginated } = require('unpaginated');
-const fetch = require('node-fetch');
+import unpaginated  from 'unpaginated';
+import fetch from 'node-fetch';
 
-const url = 'https://jsonplaceholder.typicode.com';
+const url = 'http://api.example';
 
 const fetchPosts = (page = 1, limit = 100) =>
   fetch(`${url}/posts?_page=${page}&_limit=${limit}`)
-    .then(res => res.json());
+    .then(res => res.json())
+    .then(payload => payload.data);
 
-const getPostsCount = async () => {...}; // imagine we can ask the API for a total count
-
-unpaginated(fetchPosts)();
+unpaginated(fetchPosts);
 // makes 1 request to retrieve all 100 posts
 
-unpaginated(fetchPosts, 20)();
+unpaginated(fetchPosts, 20);
 // makes 6 requests, one at a time. 5 returned 20 results, 6th returned 0
 
-unpaginated(fetchPosts, 20, 100)();
+unpaginated(fetchPosts, 20, 100);
 // makes 5 requests concurrently because total is supplied
 
-unpaginated(fetchPost, 20, getPostsCount)();
-// makes 6 requests: 1 to retrieve total, then 5 concurrently to retrieve posts.
-// While this requires an extra call, it is drastically faster.
+// You can also return a payload object with data and total properties set.
+const fetchPostsWithTotal = (page = 1, limit = 100) =>
+  fetch(`${url}/posts?_page=${page}&_limit=${limit}`)
+    .then(res => res.json())
+    .then(({ data, total }) => ({ data, total }));
+
+unpaginated(fetchPostsWithTotal, 20);
+// makes 1 request, then remaining 4 concurrently
 ```
 
 The following utilities are included to help `unpaginated()` speak the language of your API:
-  - `page(pageNum, zeroIndex = false)`
   - `offset(pageNum, limit, zeroIndex = true)`
+  - `page(pageNum, zeroIndex = false)`
 
 ```js
-const { unpaginated, offset } = require('unpaginated');
-const fetch = require('node-fetch');
+import unpaginated, { offset } = from 'unpaginated';
+import fetch from 'node-fetch';
 
-const url = 'https://www.third-party/api';
+const url = 'http://api.example';
 
 const fetchUsers = (offset = 0, limit = 100) =>
   fetch(`${url}/users?offset=${offset}&limit=${limit}`)
     .then(res => res.json());
 
-unpaginated(
-  (page, limit) => fetchUsers(offset(page, limit), limit),
-  200
-)();
+unpaginated((page, limit) => fetchUsers(offset(page, limit), limit), 200);
 ```
