@@ -1,50 +1,64 @@
-import { deepStrictEqual } from 'assert';
+import test from 'ava';
 import R from 'ramda';
-const { curryN, range } = R;
+const { andThen, pipeWith, range } = R;
 import unpaginated, {
   page,
   offset,
-  totalPages
+  totalPages,
+  dataTotal
 } from './unpaginated.js';
-const eq = curryN(2, deepStrictEqual);
 
-// [{ id: number }]
 const POSTS = range(1, 101).map(num => ({ id: num }));
-
-// Test that, given page 1, 2, 3..., page(num, zeroIndex) works like:
-eq(page(1), 1);
-eq(page(2), 2);
-eq(page(1, true), 0);
-eq(page(2, true), 1);
-
-// Test that, given page 1, 2, 3..., offset(num, limit, zeroIndex) works like:
-eq(offset(1, 100), 0);
-eq(offset(2, 100), 100);
-eq(offset(1, 100, false), 1);
-eq(offset(2, 100, false), 101);
-
-// Test that, given total and limit, totalPages returns number of pages
-eq(totalPages(12, 1), 12);
-eq(totalPages(12, 2), 6);
-eq(totalPages(13, 2), 7);
-
 const fetchPosts = async (page = 1, limit = 100) =>
   POSTS.slice(offset(page, limit), offset(page + 1, limit));
+const fetchPostsCount = async () => POSTS.length;
 
-const fetchPostCount = async () => POSTS.length;
+test('page(num, zeroIndex)', t => {
+  t.deepEqual(page(1), 1);
+  t.deepEqual(page(2), 2);
+  t.deepEqual(page(1, true), 0);
+  t.deepEqual(page(2, true), 1);
+});
 
-// Test basic functionality: function, limit, total
-unpaginated(fetchPosts, 20, 100)().then(eq(POSTS));
+test('offset(num, limit, zeroIndex)', t => {
+  t.deepEqual(offset(1, 100), 0);
+  t.deepEqual(offset(2, 100), 100);
+  t.deepEqual(offset(1, 100, false), 1);
+  t.deepEqual(offset(2, 100, false), 101);
+});
 
-// Test that "total" arg can be a function
-unpaginated(fetchPosts, 20, fetchPostCount)().then(eq(POSTS));
+test('totalPages(total, limit)', t => {
+  t.deepEqual(totalPages(12, 1), 12);
+  t.deepEqual(totalPages(12, 2), 6);
+  t.deepEqual(totalPages(13, 2), 7);
+});
 
-// Test that function makes an extra call to get leftover entries
-unpaginated(fetchPosts, 19, 100)().then(eq(POSTS));
+test('dataTotal(toData, toTotal, result) returns object with data and total', async t => {
+  const fetchPostsWithTotal = (...args) => fetchPosts(...args).then(dataTotal(K => K, () => 100));
+  t.deepEqual(await fetchPostsWithTotal(1, 100), { data: POSTS, total: 100 });
+});
 
-// Test that function switches to exploratory implementation
-// when total arg is not passed in
-unpaginated(fetchPosts, 20)().then(eq(POSTS));
+test('unpaginated(fn, limit, total) basic usage', async t => {
+  t.deepEqual(await unpaginated(fetchPosts, 20, 100), POSTS);
+});
 
-// Test that function defaults to limit 100
-unpaginated(fetchPosts)().then(eq(POSTS));
+test('unpaginated(fn, limit, total) accepts total function', async t => {
+  t.deepEqual(await unpaginated(fetchPosts, 20, fetchPostsCount), POSTS);
+});
+
+test('unpaginated(fn, limit, total) makes one more call to get leftover entries', async t => {
+  t.deepEqual(await unpaginated(fetchPosts, 19, 100), POSTS);
+});
+
+test('unpaginated(fn, limit) calls functions one at a time when total is not passed', async t => {
+  t.deepEqual(await unpaginated(fetchPosts, 20), POSTS);
+});
+
+test('unpaginated(fn) defaults limit to 100', async t => {
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+});
+
+test('unpaginated(fn, limit) calls first function, then rest concurrently if { data, total } value', async t => {
+  const fetchPostsWithTotal = (...args) => fetchPosts(...args).then(posts => ({ data: posts, total: 100 }));
+  t.deepEqual(await unpaginated(fetchPostsWithTotal, 20), POSTS);
+});
