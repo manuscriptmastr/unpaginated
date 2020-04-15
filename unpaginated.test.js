@@ -1,6 +1,6 @@
 import test from 'ava';
 import R from 'ramda';
-const { andThen, pipeWith, range } = R;
+const { range } = R;
 import unpaginated, {
   page,
   offset,
