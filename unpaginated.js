@@ -36,7 +36,7 @@ export const unpaginatedSerial = async (fn, limit, startPage = 1) => {
  * @template T
  * @param {(page: number, limit: number) => Promise<T[] | { data: T[], total: number }>} fn
  * @param {number} limit
- * @param {number} [total]
+ * @param {(number | (() => number) | (() => Promise<number>))} [total]
  * @returns {Promise<T[]>} An array of all entries
  * @example
  * const fetchUsers = (page, limit) => fetch(`/users?page=${page}&limit=${limit}`).then(res => res.json());

@@ -13,11 +13,16 @@ const fetchPosts = (page = 1, limit = 100) =>
     .then(res => res.json())
     .then(payload => payload.data);
 
+const fetchPostsTotal = () => fetch(`${url}/posts/total`);
+
 unpaginated(fetchPosts);
 // makes 2 requests, serially. 1st returned 100 results, 2nd returned 0
 
 unpaginated(fetchPosts, 20);
 // makes 6 requests, serially. First 5 returned 20 results, 6th returned 0
+
+unpaginated(fetchPosts, 20, fetchPostsTotal);
+// makes 1 serial request to get total, then makes 5 concurrent requests
 
 unpaginated(fetchPosts, 20, 100);
 // makes 5 requests, concurrently.
