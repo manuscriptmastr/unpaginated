@@ -8,6 +8,8 @@ const POSTS = range(1, 101).map(num => ({ id: num }));
 const FETCH_POSTS = async (page = 1, limit = 100) =>
   POSTS.slice(offset(page, limit), offset(page + 1, limit));
 
+const FETCH_POSTS_TOTAL = async () => POSTS.length;
+
 test('offset(num, limit, zeroIndex)', t => {
   t.deepEqual(offset(1, 100), 0);
   t.deepEqual(offset(2, 100), 100);
@@ -32,6 +34,13 @@ test('unpaginated(fn, limit, total) basic usage', async t => {
   let times = 0;
   const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts, 20, 100), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn, limit, total) accepts total function arg', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts, 20, FETCH_POSTS_TOTAL), POSTS);
   t.deepEqual(times, 5);
 });
 
