@@ -44,8 +44,13 @@ export const unpaginatedSerial = async (fn, limit, startPage = 1) => {
  *   // => Array of all 100 users
  */
 const unpaginated = async (fn, limit = 100, total) => {
-  if (is(Number, total)) {
-    return unpaginatedConcurrent(fn, limit, total, 1);
+  if (total !== undefined) {
+    const _total = is(Function, total) ?
+        await total()
+    : is(Number, total) ?
+        total
+    : raise(new TypeError('total argument must be a number or a sync/async function that returns a number'));
+    return unpaginatedConcurrent(fn, limit, _total, 1);
   }
 
   const firstEntries = await fn(1, limit);
