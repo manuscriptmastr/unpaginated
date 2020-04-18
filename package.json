@@ -1,7 +1,18 @@
 {
   "name": "unpaginated",
   "version": "2.0.1",
-  "main": "unpaginated.js",
+  "description": "Depaginates paginated operations",
+  "homepage": "https://github.com/manuscriptmastr/colanderjs",
+  "keywords": [
+    "pagination",
+    "depaginate",
+    "unpaginated",
+    "functional",
+    "concurrency",
+    "page",
+    "offset"
+  ],
+  "main": "index.js",
   "scripts": {
     "test": "ava --verbose --watch"
   },
@@ -13,5 +24,8 @@
   "type": "module",
   "devDependencies": {
     "ava": "^3.7.0"
+  },
+  "engines" : {
+    "node" : ">=13.2.0"
   }
 }
