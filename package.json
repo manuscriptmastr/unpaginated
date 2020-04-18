@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Depaginates paginated operations",
   "homepage": "https://github.com/manuscriptmastr/colanderjs",
   "keywords": [
