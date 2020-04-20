@@ -7,8 +7,7 @@ export const offset = (pageNum, limit, zeroIndex = true) =>
 export const page = (pageNum, zeroIndex = false) =>
   zeroIndex ? pageNum - 1 : pageNum;
 
-export const totalPages = (total, limit) =>
-  (total - (total % limit)) / limit + (total % limit > 0 ? 1 : 0);
+export const totalPages = (total, limit) => Math.ceil(total / limit);
 
 const unpaginatedConcurrent = (fn, limit, total, startPage = 1) => {
   const pages = range(startPage, totalPages(total, limit) + 1);
