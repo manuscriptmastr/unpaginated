@@ -1,8 +1,11 @@
 {
   "name": "unpaginated",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Depaginates paginated operations",
-  "homepage": "https://github.com/manuscriptmastr/colanderjs",
+  "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
+  "bugs": {
+    "url": "https://github.com/manuscriptmastr/unpaginated/issues"
+  },
   "keywords": [
     "pagination",
     "depaginate",
@@ -12,20 +15,24 @@
     "page",
     "offset"
   ],
-  "main": "index.js",
+  "type": "module",
+  "main": "./dist.js",
+  "module": "./index.js",
+  "exports": {
+    "require": "./dist.js",
+    "import": "./index.js",
+    "default": "./index.js"
+  },
   "scripts": {
     "test": "ava --verbose --watch"
   },
   "author": "Joshua Martin",
   "license": "ISC",
   "dependencies": {
+    "esm": "^3.2.25",
     "ramda": "^0.27.0"
   },
-  "type": "module",
   "devDependencies": {
-    "ava": "^3.7.0"
-  },
-  "engines" : {
-    "node" : ">=13.2.0"
+    "ava": "^3.8.1"
   }
 }

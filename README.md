@@ -42,7 +42,7 @@ The following utilities are included to help `unpaginated()` speak the language 
   - `page(pageNum, zeroIndex = false)`
 
 ```js
-import unpaginated, { offset } = from 'unpaginated';
+import unpaginated, { offset } from 'unpaginated';
 import fetch from 'node-fetch';
 
 const url = 'http://api.example';
@@ -52,4 +52,13 @@ const fetchUsers = (offset = 0, limit = 100) =>
     .then(res => res.json());
 
 unpaginated((page, limit) => fetchUsers(offset(page, limit), limit), 200);
+```
+
+## ES Modules
+As of version `2.0.4`, `unpaginated` is 100% ES Module friendly but backwards compatible. You can use `unpaginated` in a project:
+- with `"type": "module"` set in your top-level `package.json`
+- with a bundler like Webpack (e.g. `create-react-app`)
+- with only CommonJS support:
+```js
+const { default: unpaginated, offset, page, totalPages } = require('unpaginated');
 ```

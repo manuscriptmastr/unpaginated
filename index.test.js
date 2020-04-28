@@ -1,7 +1,9 @@
 import test from 'ava';
-import R from 'ramda';
+import andThen from 'ramda/src/andThen.js';
+import pipe from 'ramda/src/pipe.js';
+import range from 'ramda/src/range.js';
+import tap from 'ramda/src/tap.js';
 import unpaginated, { offset, page, totalPages } from './index.js';
-const { andThen, pipe, range, tap } = R;
 
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
