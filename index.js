@@ -1,5 +1,11 @@
-import R from 'ramda';
-const { andThen, both, has, is, pipeWith, prop, range, unnest } = R;
+import andThen from 'ramda/src/andThen.js';
+import both from 'ramda/src/both.js';
+import has from 'ramda/src/has.js';
+import is from 'ramda/src/is.js';
+import pipeWith from 'ramda/src/pipeWith.js';
+import prop from 'ramda/src/prop.js';
+import range from 'ramda/src/range.js';
+import unnest from 'ramda/src/unnest.js';
 
 export const offset = (pageNum, limit, zeroIndex = true) =>
   (pageNum - 1) * limit + (zeroIndex ? 0 : 1);
