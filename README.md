@@ -58,4 +58,7 @@ unpaginated((page, limit) => fetchUsers(offset(page, limit), limit), 200);
 As of version `2.0.4`, `unpaginated` is 100% ES Module friendly but backwards compatible. You can use `unpaginated` in a project:
 - with `"type": "module"` set in your top-level `package.json`
 - with a bundler like Webpack (e.g. `create-react-app`)
-- with only CommonJS support
+- with only CommonJS support:
+```js
+const { default: unpaginated, offset, page, totalPages } = require('unpaginated');
+```
