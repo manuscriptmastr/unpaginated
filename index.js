@@ -10,11 +10,13 @@ const chainRec = curry(async (fn, acc) => {
   return tag === next ? chainRec(fn, value) : value;
 });
 
+const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
+
 const _serial = curry((fn, acc) => chainRec(
-  (next, done, { data, page, prev }) => fn(page).then(d =>
-    prev === undefined || (d.length === prev && d.length !== 0)
-      ? next({ data: data.concat(d), page: page + 1, prev: d.length })
-      : done(data.concat(d))
+  (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
+    d.length === 0 || d.length < limit
+      ? done(data.concat(d))
+      : next({ data: data.concat(d), page: page + 1, limit: d.length })
   ),
   acc
 ));
@@ -36,7 +38,7 @@ const _concurrent = curry((fn, acc) => chainRec(
 
 const _cursor = curry((fn, acc) => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
-    d.length > 0 && ((typeof c === 'string' && c.length > 0) || typeof c === 'number')
+    d.length > 0 && isValidCursor(c)
       ? next({ data: data.concat(d), cursor: c })
       : done(data.concat(d))
   ),
@@ -67,7 +69,7 @@ export default fn => p(fn)().then(d =>
 : both(has('data'), has('total'))(d) ?
     d.data.length ? _concurrent(p(fn), { ...d, page: 2, limit: d.data.length }) : d.data
 : both(has('data'), has('cursor'))(d) ?
-    d.data.length ? _cursor(p(fn), d) : d.data
+    d.data.length && isValidCursor(d.cursor) ? _cursor(p(fn), d) : d.data
 :
     raise(new TypeError('Function must return an array or an object with an array'))
 );

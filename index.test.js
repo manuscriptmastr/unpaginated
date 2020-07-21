@@ -2,7 +2,7 @@ import test from 'ava';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import unpaginated from './index.js';
+import unpaginated, { concurrent, cursor, serial } from './index.js';
 
 /*
 TODO:
@@ -43,58 +43,128 @@ const FETCH_POSTS_WITH_TOTAL = async (limit, page = 1) => ({
   total: POSTS.length
 });
 
-test('unpaginated(fn) runs fn once when fn returns an empty array', async t => {
+test('concurrent(fn), empty case', async t => {
   let times = 0;
-  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
+  const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
+  t.deepEqual(await concurrent(fetchPosts), []);
   t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn) runs fn until empty array is returned', async t => {
+test('concurrent(fn), exact case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 6);
-});
-
-test('unpaginated(fn) runs fn until array is less than limit', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
+  t.deepEqual(await concurrent(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn) accepts fn that returns { data: empty, cursor }', async t => {
+test('concurrent(fn), leftover case', async t => {
   let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('unpaginated(fn) accepts fn that returns { data, cursor }', async t => {
-  let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS_WITH_CURSOR, tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await concurrent(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn) accepts fn that returns { data: empty, total }', async t => {
+test('unpaginated(fn), empty case, concurrent', async t => {
   let times = 0;
   const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), []);
   t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn) accepts fn that returns { data, total }', async t => {
+test('unpaginated(fn), exact case, concurrent', async t => {
   let times = 0;
   const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn) works when total % limit is not zero', async t => {
+test('unpaginated(fn), leftover case, concurrent', async t => {
   let times = 0;
   const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('cursor(fn), empty case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
+  t.deepEqual(await cursor(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('cursor(fn), single case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: ['hello', 'world'], cursor: null }), tap(() => { times += 1 }));
+  t.deepEqual(await cursor(fetchPosts), ['hello', 'world']);
+  t.deepEqual(times, 1);
+});
+
+test('curosr(fn), leftover case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS_WITH_CURSOR, tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn), empty case, cursor', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn), single case, cursor', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: ['hello', 'world'], cursor: null }), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), ['hello', 'world']);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn), leftover case, cursor', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS_WITH_CURSOR, tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('serial(fn), empty case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
+  t.deepEqual(await serial(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('serial(fn), exact case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
+  t.deepEqual(await serial(fetchPosts), POSTS);
+  t.deepEqual(times, 6);
+});
+
+test('serial(fn), leftover case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await serial(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn), empty case, serial', async t => {
+  let times = 0;
+  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn), exact case, serial', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 6);
+});
+
+test('unpaginated(fn), leftover case, serial', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
