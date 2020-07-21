@@ -3,8 +3,8 @@
 Dead simple pagination. `unpaginated()` executes a paginated function until done, gathering results as efficiently as possible.
 
 ```js
-import unpaginated  from 'unpaginated';
 import fetch from 'node-fetch';
+import unpaginated from 'unpaginated';
 
 // Say our API has 100 posts available
 const url = 'http://api.example';
@@ -20,8 +20,8 @@ unpaginated(fetchPosts);
 
 `unpaginated` also understands cursor-based pagination. Just return `{ data: [], cursor: string | number }`:
 ```js
-import unpaginated  from 'unpaginated';
 import fetch from 'node-fetch';
+import unpaginated from 'unpaginated';
 
 const url = 'http://api.example';
 
@@ -37,8 +37,8 @@ unpaginated(fetchPostsWithCursor);
 
 Many APIs include a total property in the payload. Just return `{ data: [], total: number }` and `unpaginated` will run concurrently:
 ```js
-import unpaginated  from 'unpaginated';
 import fetch from 'node-fetch';
+import unpaginated from 'unpaginated';
 
 const url = 'http://api.example';
 
@@ -49,4 +49,19 @@ const fetchPostsWithTotal = (page = 1) =>
 
 // makes 1 request serially, then 4 concurrently
 unpaginated(fetchPostsWithTotal);
+```
+
+For APIs that don't talk pages, use the `offset` helper:
+```js
+import fetch from 'node-fetch';
+import unpaginated, { offset } from 'unpaginated';
+
+const url = 'http://api.example';
+
+const fetchPosts = (page = 1) =>
+  fetch(`${url}/posts?_offset=${offset(20, page)}&_limit=20`)
+    .then(res => res.json())
+    .then(({ posts }) => posts);
+
+unpaginated(pg => fetchPosts(20, pg));
 ```

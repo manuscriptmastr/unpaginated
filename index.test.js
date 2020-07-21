@@ -2,24 +2,26 @@ import test from 'ava';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import unpaginated, { concurrent, cursor, serial } from './index.js';
+import unpaginated, { concurrent, cursor, offset, serial } from './index.js';
 
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
-const offset = (pageNum, limit, zeroIndex = true) =>
-  (pageNum - 1) * limit + (zeroIndex ? 0 : 1);
-
 const FETCH_POSTS = async (limit, page = 1) =>
-  POSTS.slice(offset(page, limit), offset(page + 1, limit));
+  POSTS.slice(offset(limit, page), offset(limit, page + 1));
 
 const FETCH_POSTS_WITH_TOTAL = async (limit, page = 1) => ({
-  data: POSTS.slice(offset(page, limit), offset(page + 1, limit)),
+  data: POSTS.slice(offset(limit, page), offset(limit, page + 1)),
   total: POSTS.length
 });
 
 const FETCH_POSTS_WITH_CURSOR = async (limit, cursor = 0) => ({
   data: POSTS.slice(cursor, cursor + limit),
   cursor: cursor + limit >= POSTS.length ? null : cursor + limit
+});
+
+test('offset(num, limit, zeroIndex)', t => {
+  t.deepEqual(offset(100, 1), 0);
+  t.deepEqual(offset(100, 2), 100);
 });
 
 test('concurrent(fn), empty case', async t => {
