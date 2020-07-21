@@ -10,8 +10,6 @@ const chainRec = curry(async (fn, acc) => {
   return tag === next ? chainRec(fn, value) : value;
 });
 
-const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
-
 const _serial = curry((fn, acc) => chainRec(
   (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
     d.length === 0 || d.length < limit
@@ -24,10 +22,10 @@ const _serial = curry((fn, acc) => chainRec(
 const _concurrent = curry((fn, acc) => chainRec(
   (next, done, { data, page, limit, total }) =>
     total === undefined
-      ? fn(page).then(({ data: d, total }) =>
-          d.length < total
-            ? next({ data: [Promise.resolve(data.concat(d))], page: page + 1, limit: d.length, total })
-            : done(d)
+      ? fn(page).then(({ data: d, total: t }) =>
+          d.length > 0 && d.length < t
+            ? next({ data: [Promise.resolve(data.concat(d))], page: page + 1, limit: d.length, total: t })
+            : done(data.concat(d))
         )
       : page * limit < total
         ? next({ data: [...data, fn(page).then(res => res.data)], page: page + 1, limit, total })
@@ -35,6 +33,8 @@ const _concurrent = curry((fn, acc) => chainRec(
   ,
   acc
 ));
+
+const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
 
 const _cursor = curry((fn, acc) => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>

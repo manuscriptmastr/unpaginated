@@ -6,10 +6,6 @@ import unpaginated, { concurrent, cursor, serial } from './index.js';
 
 /*
 TODO:
-1. Align test cases for all strategies
-  - Empty case
-  - Odd number case
-  - Incorrect input case
 2. Update README
 3. Make mocks more realistic
 4. Consider alternative interfaces. Does this feel natural for:
@@ -50,6 +46,13 @@ test('concurrent(fn), empty case', async t => {
   t.deepEqual(times, 1);
 });
 
+test('concurrent(fn), single case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], total: 100 }), tap(() => { times += 1 }));
+  t.deepEqual(await concurrent(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
 test('concurrent(fn), exact case', async t => {
   let times = 0;
   const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
@@ -67,6 +70,13 @@ test('concurrent(fn), leftover case', async t => {
 test('unpaginated(fn), empty case, concurrent', async t => {
   let times = 0;
   const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn), single case, concurrent', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], total: 100 }), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), []);
   t.deepEqual(times, 1);
 });
@@ -99,7 +109,7 @@ test('cursor(fn), single case', async t => {
   t.deepEqual(times, 1);
 });
 
-test('curosr(fn), leftover case', async t => {
+test('cursor(fn), leftover case', async t => {
   let times = 0;
   const fetchPosts = pipe(FETCH_POSTS_WITH_CURSOR, tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), POSTS);
@@ -134,6 +144,13 @@ test('serial(fn), empty case', async t => {
   t.deepEqual(times, 1);
 });
 
+test('serial(fn), single case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
+  t.deepEqual(await serial(fetchPosts), POSTS);
+  t.deepEqual(times, 2);
+});
+
 test('serial(fn), exact case', async t => {
   let times = 0;
   const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
@@ -146,6 +163,13 @@ test('serial(fn), leftover case', async t => {
   const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
   t.deepEqual(await serial(fetchPosts), POSTS);
   t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn), single case, serial', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 2);
 });
 
 test('unpaginated(fn), empty case, serial', async t => {
