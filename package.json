@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "2.0.4",
+  "version": "3.0.0-beta.0",
   "description": "Depaginates paginated operations",
   "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
   "bugs": {
@@ -8,10 +8,12 @@
   },
   "keywords": [
     "pagination",
+    "paginate",
     "depaginate",
     "unpaginated",
     "functional",
     "concurrency",
+    "cursor",
     "page",
     "offset"
   ],
@@ -29,10 +31,10 @@
   "author": "Joshua Martin",
   "license": "ISC",
   "dependencies": {
-    "esm": "^3.2.25",
-    "ramda": "^0.27.0"
+    "esm": "^3.2.25"
   },
   "devDependencies": {
-    "ava": "^3.8.1"
+    "ava": "^3.10.1",
+    "ramda": "^0.27.0"
   }
 }
