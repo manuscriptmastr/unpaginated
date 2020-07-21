@@ -1,75 +1,104 @@
 import test from 'ava';
-import andThen from 'ramda/src/andThen.js';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import unpaginated, { offset, page, totalPages } from './index.js';
+import unpaginated from './index.js';
 
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
-const FETCH_POSTS = async (page = 1, limit = 100) =>
+const offset = (pageNum, limit, zeroIndex = true) =>
+  (pageNum - 1) * limit + (zeroIndex ? 0 : 1);
+
+const FETCH_POSTS = async (limit, page = 1) =>
   POSTS.slice(offset(page, limit), offset(page + 1, limit));
 
-const FETCH_POSTS_TOTAL = async () => POSTS.length;
+const POSTS_OBJECT = {
+  0: { data: POSTS.slice(0, 20), cursor: 1 },
+  1: { data: POSTS.slice(20, 40), cursor: 2 },
+  2: { data: POSTS.slice(40, 60), cursor: 3 },
+  3: { data: POSTS.slice(60, 80), cursor: 4 },
+  4: { data: POSTS.slice(80, 100), cursor: null }
+};
 
-test('offset(num, limit, zeroIndex)', t => {
-  t.deepEqual(offset(1, 100), 0);
-  t.deepEqual(offset(2, 100), 100);
-  t.deepEqual(offset(1, 100, false), 1);
-  t.deepEqual(offset(2, 100, false), 101);
+const FETCH_POSTS_WITH_CURSOR = async (cursor = 0) => POSTS_OBJECT[cursor];
+
+const FETCH_POSTS_WITH_TOTAL = async (limit, page = 1) => ({
+  data: POSTS.slice(offset(page, limit), offset(page + 1, limit)),
+  total: POSTS.length
 });
 
-test('page(num, zeroIndex)', t => {
-  t.deepEqual(page(1), 1);
-  t.deepEqual(page(2), 2);
-  t.deepEqual(page(1, true), 0);
-  t.deepEqual(page(2, true), 1);
-});
-
-test('totalPages(total, limit)', t => {
-  t.deepEqual(totalPages(12, 1), 12);
-  t.deepEqual(totalPages(12, 2), 6);
-  t.deepEqual(totalPages(13, 2), 7);
-});
-
-test('unpaginated(fn, limit, total) basic usage', async t => {
+test('unpaginated(fn) runs fn once when fn returns an empty array', async t => {
   let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts, 20, 100), POSTS);
-  t.deepEqual(times, 5);
+  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn, limit, total) accepts total function arg', async t => {
+test('unpaginated(fn) runs fn until empty array is returned', async t => {
   let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts, 20, FETCH_POSTS_TOTAL), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn, limit, total) makes one more call to get leftover entries', async t => {
-  let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts, 19, 100), POSTS);
-  t.deepEqual(times, 6);
-});
-
-test('unpaginated(fn, limit) calls functions one at a time when total is not passed', async t => {
-  let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts, 20), POSTS);
-  t.deepEqual(times, 6);
-});
-
-test('unpaginated(fn, limit) calls first function and chooses concurrency for leftover entries when object with total is returned', async t => {
-  let times = 0;
-  const fetchPostsWithTotal = pipe(FETCH_POSTS, andThen(posts => ({ data: posts, total: 100 })), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPostsWithTotal, 20), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn) defaults limit to 100', async t => {
-  let times = 0;
-  const fetchPosts = pipe(FETCH_POSTS, tap(() => { times += 1 }));
+  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 2);
+  t.deepEqual(times, 6);
+});
+
+test('unpaginated(fn) runs fn until array is less than limit', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn) accepts fn that returns { data: empty, cursor }', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn) accepts fn that returns { data, cursor }', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS_WITH_CURSOR, tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn) accepts fn that returns { data: empty, total }', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn) accepts fn that returns { data, total }', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn) works when total % limit is not zero', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('unpaginated(fn) raises original error thrown by fn', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => { throw new Error('BOOM') }, tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => unpaginated(fetchPosts),
+    { instanceOf: Error, message: 'BOOM' }
+  );
+  t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn) throws TypeError when fn returns an unsupported value', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => 123, tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => unpaginated(fetchPosts),
+    { instanceOf: TypeError, message: 'Function must return an array or an object with an array' }
+  );
+  t.deepEqual(times, 1);
 });
