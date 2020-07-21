@@ -15,7 +15,8 @@
     "concurrency",
     "cursor",
     "page",
-    "offset"
+    "offset",
+    "total"
   ],
   "type": "module",
   "main": "./dist.js",
