@@ -5,14 +5,12 @@ const chainRec = async (fn, acc) => {
   return tag === next ? chainRec(fn, value) : value;
 };
 
-const _serial = (fn, acc) => chainRec(
-  (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
-    d.length === 0 || d.length < limit
-      ? done(data.concat(d))
-      : next({ data: data.concat(d), page: page + 1, limit: d.length })
-  ),
-  acc
-);
+const raise = err => { throw err };
+const p = fn => async (...args) => fn(...args);
+
+const isConcurrentObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('total');
+const isCursorObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('cursor');
+const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
 
 const _concurrent = (fn, acc) => chainRec(
   (next, done, { data, page, limit, total }) =>
@@ -29,8 +27,6 @@ const _concurrent = (fn, acc) => chainRec(
   acc
 );
 
-const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
-
 const _cursor = (fn, acc) => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
     d.length > 0 && isValidCursor(c)
@@ -40,15 +36,18 @@ const _cursor = (fn, acc) => chainRec(
   acc
 );
 
-export const serial = fn => _serial(fn, { data: [], page: 1 });
+const _serial = (fn, acc) => chainRec(
+  (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
+    d.length === 0 || d.length < limit
+      ? done(data.concat(d))
+      : next({ data: data.concat(d), page: page + 1, limit: d.length })
+  ),
+  acc
+);
+
 export const concurrent = fn => _concurrent(fn, { data: [], page: 1 });
 export const cursor = fn => _cursor(fn, { data: [] });
-
-const raise = err => { throw err };
-const p = fn => async (...args) => fn(...args);
-
-const isConcurrentObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('total');
-const isCursorObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('cursor');;
+export const serial = fn => _serial(fn, { data: [], page: 1 });
 
 /**
 * Executes a paginated function over all pages, preferring concurrency where possible.
