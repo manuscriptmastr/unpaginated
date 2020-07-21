@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "2.0.4",
+  "version": "3.0.0-beta.0",
   "description": "Depaginates paginated operations",
   "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
   "bugs": {
@@ -8,10 +8,12 @@
   },
   "keywords": [
     "pagination",
+    "paginate",
     "depaginate",
     "unpaginated",
     "functional",
     "concurrency",
+    "cursor",
     "page",
     "offset"
   ],
