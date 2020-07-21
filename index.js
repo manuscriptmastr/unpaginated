@@ -1,9 +1,11 @@
-const chainRec = async (fn, acc) => {
+import curry from 'ramda/src/curry.js';
+
+const chainRec = curry(async (fn, acc) => {
   const next = value => ({ tag: next, value });
   const done = value => ({ tag: done, value });
   const { value, tag } = await fn(next, done, acc);
   return tag === next ? chainRec(fn, value) : value;
-};
+});
 
 const raise = err => { throw err };
 const p = fn => async (...args) => fn(...args);
@@ -12,7 +14,7 @@ const isConcurrentObject = obj => typeof obj === 'object' && obj.hasOwnProperty(
 const isCursorObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('cursor');
 const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
 
-const _concurrent = (fn, acc) => chainRec(
+const _concurrent = curry((fn, acc) => chainRec(
   (next, done, { data, page, limit, total }) =>
     total === undefined
       ? fn(page).then(({ data: d, total: t }) =>
@@ -25,25 +27,27 @@ const _concurrent = (fn, acc) => chainRec(
         : done(Promise.all([...data, fn(page).then(res => res.data)]).then(arr => arr.flat()))
   ,
   acc
-);
+));
 
-const _cursor = (fn, acc) => chainRec(
+const _cursor = curry((fn, acc) => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
     d.length > 0 && isValidCursor(c)
       ? next({ data: data.concat(d), cursor: c })
       : done(data.concat(d))
   ),
   acc
-);
+));
 
-const _serial = (fn, acc) => chainRec(
+const _serial = curry((fn, acc) => chainRec(
   (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
     d.length === 0 || d.length < limit
       ? done(data.concat(d))
       : next({ data: data.concat(d), page: page + 1, limit: d.length })
   ),
   acc
-);
+));
+
+export const offset = curry((limit, page) => (page - 1) * limit + 0);
 
 export const concurrent = fn => _concurrent(fn, { data: [], page: 1 });
 export const cursor = fn => _cursor(fn, { data: [] });
