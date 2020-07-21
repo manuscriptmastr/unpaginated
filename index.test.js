@@ -162,18 +162,18 @@ test('serial(fn), leftover case', async t => {
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn), single case, serial', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 2);
-});
-
 test('unpaginated(fn), empty case, serial', async t => {
   let times = 0;
   const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
   t.deepEqual(await unpaginated(fetchPosts), []);
   t.deepEqual(times, 1);
+});
+
+test('unpaginated(fn), single case, serial', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
+  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  t.deepEqual(times, 2);
 });
 
 test('unpaginated(fn), exact case, serial', async t => {
