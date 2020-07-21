@@ -4,6 +4,22 @@ import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
 import unpaginated from './index.js';
 
+/*
+TODO:
+1. Align test cases for all strategies
+  - Empty case
+  - Odd number case
+  - Incorrect input case
+2. Update README
+3. Make mocks more realistic
+4. Consider alternative interfaces. Does this feel natural for:
+  - fn that returns array?
+  - fn that returns { data, total }?
+  - fn that returns { data, cursor }?
+  - fn that requires an offset?
+  - APIs where a separate call must be made for total?
+*/
+
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
 const offset = (pageNum, limit, zeroIndex = true) =>
