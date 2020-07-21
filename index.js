@@ -14,7 +14,7 @@ const _serial = curry((fn, acc) => chainRec(
   (next, done, { data, page, limit }) => fn(page).then(d =>
     limit === undefined
       ?  next({ data: data.concat(d), page: page + 1, limit: d.length })
-      :  d.length === limit
+      :  d.length === limit && d.length !== 0
           ? next({ data: data.concat(d), page: page + 1, limit })
           : done(data.concat(d))
   ),
