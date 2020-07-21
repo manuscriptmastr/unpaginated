@@ -38,7 +38,7 @@ const _concurrent = curry((fn, acc) => chainRec(
 
 const _cursor = curry((fn, acc) => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
-    d.length > 0 && (typeof c === 'string' || typeof c === 'number')
+    d.length > 0 && ((typeof c === 'string' && c.length > 0) || typeof c === 'number')
       ? next({ data: data.concat(d), cursor: c })
       : done(data.concat(d))
   ),
