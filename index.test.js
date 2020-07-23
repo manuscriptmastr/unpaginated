@@ -22,6 +22,34 @@ const FETCH_POSTS_WITH_CURSOR = async (limit, cursor = 0) => ({
   cursor: cursor + limit >= POSTS.length ? null : cursor + limit
 });
 
+test('serial(fn), empty case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('serial(fn), single case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
+  t.deepEqual(times, 2);
+});
+
+test('serial(fn), exact case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
+  t.deepEqual(times, 6);
+});
+
+test('serial(fn), leftover case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
 test('concurrent(fn), empty case', async t => {
   let times = 0;
   const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
@@ -75,34 +103,6 @@ test('cursor(fn), leftover case', async t => {
   let times = 0;
   const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(21, cur), tap(() => { times += 1 }));
   t.deepEqual(await byCursor(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('serial(fn), empty case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
-  t.deepEqual(await byPage(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('serial(fn), single case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
-  t.deepEqual(await byPage(fetchPosts), POSTS);
-  t.deepEqual(times, 2);
-});
-
-test('serial(fn), exact case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await byPage(fetchPosts), POSTS);
-  t.deepEqual(times, 6);
-});
-
-test('serial(fn), leftover case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await byPage(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
