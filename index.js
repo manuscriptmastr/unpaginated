@@ -1,5 +1,4 @@
 import andThen from 'ramda/src/andThen.js';
-import binary from 'ramda/src/binary.js';
 import both from 'ramda/src/both.js';
 import curry from 'ramda/src/curry.js';
 import either from 'ramda/src/either.js';

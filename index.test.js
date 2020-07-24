@@ -3,7 +3,7 @@ import curry from 'ramda/src/curry.js';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import unpaginated, { byPage, byOffset, byCursor } from './index.js';
+import { byPage, byOffset, byCursor } from './index.js';
 
 const offset = curry((limit, page) => (page - 1) * limit + 0);
 
