@@ -6,11 +6,12 @@ import either from 'ramda/src/either.js';
 import unnest from 'ramda/src/unnest.js';
 import has from 'ramda/src/has.js';
 import is from 'ramda/src/is.js';
-import partialRight from 'ramda/src/partialRight.js';
 import pipe from 'ramda/src/pipe.js';
+import pipeWith from 'ramda/src/pipeWith.js';
 import prop from 'ramda/src/prop.js';
 import when from 'ramda/src/when.js';
 import unary from 'ramda/src/unary.js';
+import unless from 'ramda/src/unless.js';
 
 const chainRec = curry(async (fn, acc) => {
   const next = value => ({ tag: next, value });
@@ -19,15 +20,18 @@ const chainRec = curry(async (fn, acc) => {
   return tag === next ? chainRec(fn, value) : value;
 });
 
-const withTotal = fn => pipe(fn, andThen(when(Array.isArray, data => ({ data, total: undefined }))));
+const withTotal = when(Array.isArray, data => ({ data, total: undefined }));
 
+const validateWith = curry((pred, message) => unless(pred, () => raise(new TypeError(message))));
 const raise = err => { throw err };
 const p = fn => async (...args) => fn(...args);
-const offset = curry((limit, page) => (page - 1) * limit + 0);
+const offset = curry((page, limit) => (page - 1) * limit + 0);
 
 const isDataTotalObject = both(has('data'), has('total'));
 const isCursorObject = both(has('data'), has('cursor'));
 const isActionableCursor = either(both(is(String), s => !!s.length), is(Number));
+
+const isValidPageValue = either(Array.isArray, isDataTotalObject);
 
 /*
 byPage/byOffset
@@ -57,21 +61,30 @@ const _page = fn => chainRec(
   { data: [], page: 1, total: undefined, limit: 0 }
 );
 
-export const byPage = pipe(unary, p, withTotal, _page);
+const pageMiddleware = fn => pipeWith(andThen, [
+  p(fn),
+  validateWith(isValidPageValue, 'Function must return an array of data or an object with data and total'),
+  withTotal
+]);
 
-// const offset = curry((page, limit) => (page - 1) * limit + 0);
-// const pageToOffsetFn = curry((fn, page, limit) => fn(offset(page, limit)));
-// export const byOffset = pipe(binary, p, pageToOffsetFn, withTotal, partialRight(_page, [{ data: [], page: 1, total: undefined, limit: 0 }]));
+export const byPage = pipe(unary, pageMiddleware, _page);
 
-// export const byCursor;
+export const byOffset = pipe(fn => pipe(offset, fn), pageMiddleware, _page);
+
+const _cursor = fn => chainRec(
+  (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
+    d.length > 0 && isActionableCursor(c)
+      ? next({ data: data.concat(d), cursor: c })
+      : done(data.concat(d))
+  ),
+  { data: [], cursor: undefined }
+);
+
+const cursorMiddleware = fn => pipeWith(andThen, [
+  p(fn),
+  validateWith(isCursorObject, 'Function must return an object with data and cursor')
+]);
+
+export const byCursor = pipe(cursorMiddleware, _cursor);
 
 export default byPage;
-
-// const _cursor = curry((fn, acc) => chainRec(
-//   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
-//     d.length > 0 && isValidCursor(c)
-//       ? next({ data: data.concat(d), cursor: c })
-//       : done(data.concat(d))
-//   ),
-//   acc
-// ));
