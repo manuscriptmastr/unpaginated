@@ -17,7 +17,7 @@ const fetchPosts = page =>
 unpaginated(fetchPosts);
 ```
 
-Many APIs include a total property in the payload. Just return `{ data: [], total: number }` and `unpaginated` will run concurrently:
+Many APIs include a total property in the payload. Just include it and `unpaginated` will run concurrently:
 ```js
 import fetch from 'node-fetch';
 import unpaginated from 'unpaginated';
@@ -47,7 +47,7 @@ const fetchPosts = offset =>
 byOffset(fetchPosts);
 ```
 
-`unpaginated` also understands cursor-based pagination. Just return `{ data: [], cursor: string | number }`:
+`unpaginated` also understands cursor-based pagination:
 ```js
 import fetch from 'node-fetch';
 import { byCursor } from 'unpaginated';
@@ -72,17 +72,11 @@ Alias for `byPage`.
 import unpaginated from 'unpaginated';
 ```
 
-### `byPage`
+### `byPage :: (Page -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
+`Page` is an integer beginning at 1
 
-`(Page -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
-- `Page` is an integer beginning at 1
+### `byOffset :: (Offset -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
+`Offset` is an integer beginning at 0
 
-### `byOffset`
-
-`(Offset -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
-- `Offset` is an integer beginning at 0
-
-### `byCursor`
-
-`(Cursor -> Promise { data: [a], cursor: Cursor | Any }) -> Promise [a]`
-- `Cursor` is a string with length or a number. `byCursor` finishes pagination when `Cursor` no longer satisfies this requirement.
+### `byCursor :: (Cursor -> Promise { data: [a], cursor: Cursor | Any }) -> Promise [a]`
+`Cursor` is a string with length or a number. `byCursor` finishes pagination when `Cursor` no longer satisfies this requirement.
