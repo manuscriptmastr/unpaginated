@@ -1,4 +1,17 @@
+import andThen from 'ramda/src/andThen.js';
+import both from 'ramda/src/both.js';
 import curry from 'ramda/src/curry.js';
+import either from 'ramda/src/either.js';
+import flip from 'ramda/src/flip.js';
+import unnest from 'ramda/src/unnest.js';
+import has from 'ramda/src/has.js';
+import is from 'ramda/src/is.js';
+import pipe from 'ramda/src/pipe.js';
+import pipeWith from 'ramda/src/pipeWith.js';
+import prop from 'ramda/src/prop.js';
+import when from 'ramda/src/when.js';
+import unary from 'ramda/src/unary.js';
+import unless from 'ramda/src/unless.js';
 
 const chainRec = curry(async (fn, acc) => {
   const next = value => ({ tag: next, value });
@@ -7,70 +20,57 @@ const chainRec = curry(async (fn, acc) => {
   return tag === next ? chainRec(fn, value) : value;
 });
 
+const withTotal = when(Array.isArray, data => ({ data, total: undefined }));
+
+const validateWith = curry((pred, message) => unless(pred, () => raise(new TypeError(message))));
 const raise = err => { throw err };
-const p = fn => async (...args) => fn(...args);
+const promisify = fn => async (...args) => fn(...args);
 
-const isConcurrentObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('total');
-const isCursorObject = obj => typeof obj === 'object' && obj.hasOwnProperty('data') && obj.hasOwnProperty('cursor');
-const isValidCursor = cursor => ((typeof cursor === 'string' && cursor.length > 0) || typeof cursor === 'number');
+const isDataTotalObject = both(has('data'), has('total'));
+const isCursorObject = both(has('data'), has('cursor'));
+const isActionableCursor = either(both(is(String), s => !!s.length), is(Number));
+const isValidPageValue = either(Array.isArray, isDataTotalObject);
 
-const _concurrent = curry((fn, acc) => chainRec(
+const _page = fn => chainRec(
   (next, done, { data, page, limit, total }) =>
     total === undefined
-      ? fn(page).then(({ data: d, total: t }) =>
-          d.length > 0 && d.length < t
-            ? next({ data: [Promise.resolve(data.concat(d))], page: page + 1, limit: d.length, total: t })
-            : done(data.concat(d))
+      ? fn(page, limit).then(({ data: d, total: t }) =>
+          d.length === 0 || d.length < limit
+            ? done(Promise.all([...data, Promise.resolve(d)]).then(unnest))
+            : next({ data: [...data, Promise.resolve(d)], page: page + 1, limit: d.length, total: t })
         )
       : page * limit < total
-        ? next({ data: [...data, fn(page).then(res => res.data)], page: page + 1, limit, total })
-        : done(Promise.all([...data, fn(page).then(res => res.data)]).then(arr => arr.flat()))
+        ? next({ data: [...data, fn(page, limit).then(prop('data'))], page: page + 1, limit, total })
+        : done(Promise.all([...data, fn(page, limit).then(prop('data'))]).then(unnest))
   ,
-  acc
-));
+  { data: [], page: 1, total: undefined, limit: 0 }
+);
 
-const _cursor = curry((fn, acc) => chainRec(
+const pageMiddleware = fn => pipeWith(andThen, [
+  promisify(fn),
+  validateWith(isValidPageValue, 'Function must return an array of data or an object with data and total'),
+  withTotal
+]);
+
+export const byPage = pipe(unary, pageMiddleware, _page);
+
+export const offset = curry((limit, page) => (page - 1) * limit + 0);
+export const byOffset = pipe(fn => pipe(flip(offset), fn), pageMiddleware, _page);
+
+const _cursor = fn => chainRec(
   (next, done, { data, cursor }) => fn(cursor).then(({ data: d, cursor: c }) =>
-    d.length > 0 && isValidCursor(c)
+    d.length > 0 && isActionableCursor(c)
       ? next({ data: data.concat(d), cursor: c })
       : done(data.concat(d))
   ),
-  acc
-));
-
-const _serial = curry((fn, acc) => chainRec(
-  (next, done, { data, page, limit = 0 }) => fn(page).then(d =>
-    d.length === 0 || d.length < limit
-      ? done(data.concat(d))
-      : next({ data: data.concat(d), page: page + 1, limit: d.length })
-  ),
-  acc
-));
-
-export const offset = curry((limit, page) => (page - 1) * limit + 0);
-
-export const concurrent = fn => _concurrent(fn, { data: [], page: 1 });
-export const cursor = fn => _cursor(fn, { data: [] });
-export const serial = fn => _serial(fn, { data: [], page: 1 });
-
-/**
-* Executes a paginated function over all pages, preferring concurrency where possible.
-* @async
-* @template T
-* @param {(page: number) => Promise<T[] | { data: T[], cursor: (string | number) } | { data: T[], total: number }>} fn
-* @returns {Promise<T[]>} An array of all entries
-* @example
-* const fetchUsers = (page = 1) => fetch(`/users?page=${page}&limit=100`).then(res => res.json());
-* await unpaginated(fetchUsers);
-*   // => Array of all users
-*/
-export default fn => p(fn)().then(d =>
-  Array.isArray(d) ?
-    d.length ? _serial(p(fn), { data: d, page: 2 }) : d
-: isConcurrentObject(d) ?
-    d.data.length ? _concurrent(p(fn), { ...d, page: 2, limit: d.data.length }) : d.data
-: isCursorObject(d) ?
-    d.data.length && isValidCursor(d.cursor) ? _cursor(p(fn), d) : d.data
-:
-    raise(new TypeError('Function must return an array or an object with an array'))
+  { data: [], cursor: undefined }
 );
+
+const cursorMiddleware = fn => pipeWith(andThen, [
+  promisify(fn),
+  validateWith(isCursorObject, 'Function must return an object with data and cursor')
+]);
+
+export const byCursor = pipe(cursorMiddleware, _cursor);
+
+export default byPage;

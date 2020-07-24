@@ -1,213 +1,189 @@
 import test from 'ava';
+import curry from 'ramda/src/curry.js';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import unpaginated, { concurrent, cursor, offset, serial } from './index.js';
+import { byPage, byOffset, byCursor, offset } from './index.js';
 
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
-const FETCH_POSTS = async (limit, page = 1) =>
-  POSTS.slice(offset(limit, page), offset(limit, page + 1));
+const FETCH_POSTS = curry(async (limit, page) =>
+  POSTS.slice(offset(limit, page), offset(limit, page + 1))
+);
 
-const FETCH_POSTS_WITH_TOTAL = async (limit, page = 1) => ({
+const FETCH_POSTS_WITH_TOTAL = curry(async (limit, page) => ({
   data: POSTS.slice(offset(limit, page), offset(limit, page + 1)),
   total: POSTS.length
-});
+}));
 
-const FETCH_POSTS_WITH_CURSOR = async (limit, cursor = 0) => ({
+const FETCH_POSTS_OFFSET = curry(async (limit, offset) =>
+  POSTS.slice(offset, offset + limit)
+);
+
+const FETCH_POSTS_OFFSET_WITH_TOTAL = curry(async (limit, offset) => ({
+  data: POSTS.slice(offset, offset + limit),
+  total: POSTS.length
+}));
+
+const FETCH_POSTS_WITH_CURSOR = curry(async (limit, cursor = 0) => ({
   data: POSTS.slice(cursor, cursor + limit),
   cursor: cursor + limit >= POSTS.length ? null : cursor + limit
-});
+}));
 
-test('offset(num, limit, zeroIndex)', t => {
-  t.deepEqual(offset(100, 1), 0);
-  t.deepEqual(offset(100, 2), 100);
-});
-
-test('concurrent(fn), empty case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
-  t.deepEqual(await concurrent(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('concurrent(fn), single case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], total: 100 }), tap(() => { times += 1 }));
-  t.deepEqual(await concurrent(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('concurrent(fn), exact case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await concurrent(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('concurrent(fn), leftover case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await concurrent(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn), empty case, concurrent', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('unpaginated(fn), single case, concurrent', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], total: 100 }), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('unpaginated(fn), exact case, concurrent', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn), leftover case, concurrent', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS_WITH_TOTAL(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('cursor(fn), empty case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
-  t.deepEqual(await cursor(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('cursor(fn), single case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: ['hello', 'world'], cursor: null }), tap(() => { times += 1 }));
-  t.deepEqual(await cursor(fetchPosts), ['hello', 'world']);
-  t.deepEqual(times, 1);
-});
-
-test('cursor(fn), exact case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(20, cur), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('cursor(fn), leftover case', async t => {
-  let times = 0;
-  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(21, cur), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn), empty case, cursor', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
-  t.deepEqual(times, 1);
-});
-
-test('unpaginated(fn), single case, cursor', async t => {
-  let times = 0;
-  const fetchPosts = pipe(async () => ({ data: ['hello', 'world'], cursor: null }), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), ['hello', 'world']);
-  t.deepEqual(times, 1);
-});
-
-test('unpaginated(fn), exact case, cursor', async t => {
-  let times = 0;
-  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(20, cur), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('unpaginated(fn), leftover case, cursor', async t => {
-  let times = 0;
-  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(21, cur), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 5);
-});
-
-test('serial(fn), empty case', async t => {
+test('byPage(fn), serial, empty case', async t => {
   let times = 0;
   const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
-  t.deepEqual(await serial(fetchPosts), []);
+  t.deepEqual(await byPage(fetchPosts), []);
   t.deepEqual(times, 1);
 });
 
-test('serial(fn), single case', async t => {
+test('byPage(fn), serial, single case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
-  t.deepEqual(await serial(fetchPosts), POSTS);
+  const fetchPosts = pipe(FETCH_POSTS(100), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
   t.deepEqual(times, 2);
 });
 
-test('serial(fn), exact case', async t => {
+test('byPage(fn), serial, exact case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await serial(fetchPosts), POSTS);
+  const fetchPosts = pipe(FETCH_POSTS(20), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
   t.deepEqual(times, 6);
 });
 
-test('serial(fn), leftover case', async t => {
+test('byPage(fn), serial, leftover case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await serial(fetchPosts), POSTS);
+  const fetchPosts = pipe(FETCH_POSTS(21), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn), empty case, serial', async t => {
+test('byPage(fn), concurrent, empty case', async t => {
   let times = 0;
-  const fetchPosts = pipe(() => Promise.resolve([]), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), []);
+  const fetchPosts = pipe(async () => ({ data: [], total: 0 }), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), []);
   t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn), single case, serial', async t => {
+test('byPage(fn), concurrent, single case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(100, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 2);
+  const fetchPosts = pipe(async () => ({ data: [], total: 100 }), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), []);
+  t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn), exact case, serial', async t => {
+test('byPage(fn), concurrent, exact case', async t => {
   let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(20, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
-  t.deepEqual(times, 6);
-});
-
-test('unpaginated(fn), leftover case, serial', async t => {
-  let times = 0;
-  const fetchPosts = pipe(pg => FETCH_POSTS(21, pg), tap(() => { times += 1 }));
-  t.deepEqual(await unpaginated(fetchPosts), POSTS);
+  const fetchPosts = pipe(FETCH_POSTS_WITH_TOTAL(20), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
   t.deepEqual(times, 5);
 });
 
-test('unpaginated(fn) raises original error thrown by fn', async t => {
+test('byPage(fn), concurrent, leftover case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS_WITH_TOTAL(21), tap(() => { times += 1 }));
+  t.deepEqual(await byPage(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('byPage(fn) raises error when fn returns incorrect value', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({}), tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => byPage(fetchPosts),
+    { instanceOf: TypeError, message: 'Function must return an array of data or an object with data and total' }
+  );
+  t.deepEqual(times, 1);
+});
+
+test('byPage(fn) raises original error thrown by fn', async t => {
   let times = 0;
   const fetchPosts = pipe(async () => { throw new Error('BOOM') }, tap(() => { times += 1 }));
   await t.throwsAsync(
-    () => unpaginated(fetchPosts),
+    () => byPage(fetchPosts),
     { instanceOf: Error, message: 'BOOM' }
   );
   t.deepEqual(times, 1);
 });
 
-test('unpaginated(fn) throws TypeError when fn returns an unsupported value', async t => {
+test('byOffset(fn) accepts fn that requires an offset and returns data', async t => {
   let times = 0;
-  const fetchPosts = pipe(async () => 123, tap(() => { times += 1 }));
+  const fetchPosts = pipe(FETCH_POSTS_OFFSET(21), tap(() => { times += 1 }));
+  t.deepEqual(await byOffset(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('byOffset(fn) accepts fn that requires an offset and returns { data, total }', async t => {
+  let times = 0;
+  const fetchPosts = pipe(FETCH_POSTS_OFFSET_WITH_TOTAL(21), tap(() => { times += 1 }));
+  t.deepEqual(await byOffset(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('byOffset(fn) raises error when fn returns incorrect value', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({}), tap(() => { times += 1 }));
   await t.throwsAsync(
-    () => unpaginated(fetchPosts),
-    { instanceOf: TypeError, message: 'Function must return an array or an object with an array' }
+    () => byOffset(fetchPosts),
+    { instanceOf: TypeError, message: 'Function must return an array of data or an object with data and total' }
+  );
+  t.deepEqual(times, 1);
+});
+
+test('byOffset(fn) raises original error thrown by fn', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => { throw new Error('BOOM') }, tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => byOffset(fetchPosts),
+    { instanceOf: Error, message: 'BOOM' }
+  );
+  t.deepEqual(times, 1);
+});
+
+test('byCursor(fn), empty case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: [], cursor: 5 }), tap(() => { times += 1 }));
+  t.deepEqual(await byCursor(fetchPosts), []);
+  t.deepEqual(times, 1);
+});
+
+test('byCursor(fn), single case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({ data: ['hello', 'world'], cursor: null }), tap(() => { times += 1 }));
+  t.deepEqual(await byCursor(fetchPosts), ['hello', 'world']);
+  t.deepEqual(times, 1);
+});
+
+test('byCursor(fn), exact case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(20, cur), tap(() => { times += 1 }));
+  t.deepEqual(await byCursor(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('byCursor(fn), leftover case', async t => {
+  let times = 0;
+  const fetchPosts = pipe(cur => FETCH_POSTS_WITH_CURSOR(21, cur), tap(() => { times += 1 }));
+  t.deepEqual(await byCursor(fetchPosts), POSTS);
+  t.deepEqual(times, 5);
+});
+
+test('byCursor(fn) raises error when fn returns incorrect value', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => ({}), tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => byCursor(fetchPosts),
+    { instanceOf: TypeError, message: 'Function must return an object with data and cursor' }
+  );
+  t.deepEqual(times, 1);
+});
+
+test('byCursor(fn) raises original error thrown by fn', async t => {
+  let times = 0;
+  const fetchPosts = pipe(async () => { throw new Error('BOOM') }, tap(() => { times += 1 }));
+  await t.throwsAsync(
+    () => byCursor(fetchPosts),
+    { instanceOf: Error, message: 'BOOM' }
   );
   t.deepEqual(times, 1);
 });
