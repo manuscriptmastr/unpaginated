@@ -57,7 +57,7 @@ const _page = fn => chainRec(
   { data: [], page: 1, total: undefined, limit: 0 }
 );
 
-export const byPage = pipe(unary, p, withTotal, partialRight(_page, [{ data: [], page: 1, total: undefined, limit: 0 }]));
+export const byPage = pipe(unary, p, withTotal, _page);
 
 // const offset = curry((page, limit) => (page - 1) * limit + 0);
 // const pageToOffsetFn = curry((fn, page, limit) => fn(offset(page, limit)));
