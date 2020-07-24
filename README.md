@@ -1,6 +1,6 @@
 # unpaginated
 
-Dead simple pagination. `unpaginated()` executes a paginated function until done, gathering results as efficiently as possible.
+Dead simple pagination. [`unpaginated`](https://github.com/manuscriptmastr/unpaginated#unpaginated-1) executes a paginated function until done, gathering results as efficiently as possible.
 
 ```js
 import fetch from 'node-fetch';
@@ -32,7 +32,7 @@ const fetchPostsWithTotal = page =>
 unpaginated(fetchPostsWithTotal);
 ```
 
-For APIs that don't talk pages, use `byOffset`:
+For APIs that don't talk pages, use [`byOffset`](https://github.com/manuscriptmastr/unpaginated#byoffset):
 ```js
 import fetch from 'node-fetch';
 import { byOffset } from 'unpaginated';
@@ -47,7 +47,7 @@ const fetchPosts = offset =>
 byOffset(fetchPosts);
 ```
 
-`unpaginated` also understands cursor-based pagination:
+`unpaginated` also understands cursor-based pagination with [`byCursor`](https://github.com/manuscriptmastr/unpaginated#bycursor):
 ```js
 import fetch from 'node-fetch';
 import { byCursor } from 'unpaginated';
@@ -67,7 +67,7 @@ byCursor(fetchPostsWithCursor);
 
 ### `unpaginated`
 
-Alias for `byPage`.
+Alias for [`byPage`](https://github.com/manuscriptmastr/unpaginated#bypage).
 
 ### `byPage`
 ```js
