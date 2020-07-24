@@ -25,7 +25,7 @@ import unpaginated from 'unpaginated';
 const url = 'http://api.example';
 
 const fetchPostsWithTotal = page =>
-  fetch(`${url}/posts?_page=${page}&_limit=20`)
+  fetch(`${url}/posts?page=${page}&limit=20`)
     .then(res => res.json())
     .then(({ posts, total }) => ({ data: posts, total }));
 
@@ -40,7 +40,7 @@ import { byOffset } from 'unpaginated';
 const url = 'http://api.example';
 
 const fetchPosts = offset =>
-  fetch(`${url}/posts?_offset=${offset}&_limit=20`)
+  fetch(`${url}/posts?offset=${offset}&limit=20`)
     .then(res => res.json())
     .then(({ posts }) => posts);
 
@@ -56,7 +56,7 @@ const url = 'http://api.example';
 
 // cursor is undefined the first call, so we'll set a default
 const fetchPostsWithCursor = (cursor = '') =>
-  fetch(`${url}/posts?_cursor=${cursor}&_limit=20`)
+  fetch(`${url}/posts?cursor=${cursor}&limit=20`)
     .then(res => res.json())
     .then(({ posts, cursor }) => ({ data: posts, cursor }));
 
@@ -68,15 +68,42 @@ byCursor(fetchPostsWithCursor);
 ### `unpaginated`
 
 Alias for `byPage`.
+
+### `byPage`
 ```js
-import unpaginated from 'unpaginated';
+// byPage :: (Int -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]
+
+// serial
+byPage(page => fetch(`/users?page=${page}`)
+  .then(res => res.json()));
+
+// concurrent
+byPage(page => fetch(`/users?page=${page}`)
+  .then(res => res.json()))
+  .then(({ data, total }) => ({ data, total }));
 ```
 
-### `byPage :: (Page -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
-`Page` is an integer beginning at 1
+### `byOffset`
+```js
+// byOffset :: (Int -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]
 
-### `byOffset :: (Offset -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
-`Offset` is an integer beginning at 0
+// serial
+byOffset(offset => fetch(`/users?offset=${offset}`)
+  .then(res => res.json())
+);
 
-### `byCursor :: (Cursor -> Promise { data: [a], cursor: Cursor | Any }) -> Promise [a]`
-`Cursor` is a string with length or a number. `byCursor` finishes pagination when `Cursor` no longer satisfies this requirement.
+// concurrent
+byOffset(offset => fetch(`/users?offset=${offset}`)
+  .then(res => res.json()))
+  .then(({ data, total }) => ({ data, total })
+);
+```
+
+### `byCursor`
+```js
+// byCursor :: ((String | Int) -> Promise { data: [a], cursor: (String | Int) }) -> Promise [a]
+
+byCursor(cursor => fetch(`/users?cursor=${cursor || ''}`)
+  .then(res => res.json())
+);
+```
