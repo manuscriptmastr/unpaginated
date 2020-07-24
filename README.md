@@ -9,7 +9,7 @@ import unpaginated from 'unpaginated';
 // Say our API has 100 posts available
 const url = 'http://api.example';
 
-const fetchPosts = (page = 1) =>
+const fetchPosts = page =>
   fetch(`${url}/posts?_page=${page}&_limit=20`)
     .then(res => res.json())
     .then(({ posts }) => posts);
@@ -65,24 +65,24 @@ byCursor(fetchPostsWithCursor);
 
 ## API
 
-### `unpaginated()`
+### `unpaginated`
 
 Alias for `byPage`.
 ```js
 import unpaginated from 'unpaginated';
 ```
 
-### `byPage()`
+### `byPage`
 
-`(Page -> Promise ([a] | {data: [a], total: Int})) -> Promise [a]`
+`(Page -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
 - `Page` is an integer beginning at 1
 
-### `byOffset()`
+### `byOffset`
 
-`(Offset -> Promise ([a] | {data: [a], total: Int})) -> Promise [a]`
+`(Offset -> Promise ([a] | { data: [a], total: Int })) -> Promise [a]`
 - `Offset` is an integer beginning at 0
 
 ### `byCursor`
 
-`(Cursor -> Promise {data: [a], cursor: Cursor | Any })`
+`(Cursor -> Promise { data: [a], cursor: Cursor | Any }) -> Promise [a]`
 - `Cursor` is a string with length or a number. `byCursor` finishes pagination when `Cursor` no longer satisfies this requirement.

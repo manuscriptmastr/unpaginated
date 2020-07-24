@@ -3,9 +3,7 @@ import curry from 'ramda/src/curry.js';
 import pipe from 'ramda/src/pipe.js';
 import range from 'ramda/src/range.js';
 import tap from 'ramda/src/tap.js';
-import { byPage, byOffset, byCursor } from './index.js';
-
-const offset = curry((limit, page) => (page - 1) * limit + 0);
+import { byPage, byOffset, byCursor, offset } from './index.js';
 
 const POSTS = range(1, 101).map(num => ({ id: num }));
 
