@@ -107,3 +107,8 @@ byCursor(cursor => fetch(`/users?cursor=${cursor || ''}`)
   .then(res => res.json())
 );
 ```
+
+## CommonJS
+```js
+const { default: unpaginated, byPage, byCursor, byOffset } = require('unpaginated');
+```
