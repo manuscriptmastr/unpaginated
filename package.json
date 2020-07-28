@@ -19,10 +19,10 @@
     "total"
   ],
   "type": "module",
-  "main": "./dist.js",
+  "main": "./dist.cjs",
   "module": "./index.js",
   "exports": {
-    "require": "./dist.js",
+    "require": "./dist.cjs",
     "import": "./index.js",
     "default": "./index.js"
   },
