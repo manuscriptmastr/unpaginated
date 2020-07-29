@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "3.0.1-beta.4",
+  "version": "3.0.1",
   "description": "Dead simple pagination",
   "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
   "bugs": {
@@ -19,10 +19,10 @@
     "total"
   ],
   "type": "module",
-  "main": "./cjs/index.js",
+  "main": "./cjs/index.cjs",
   "module": "./src/index.js",
   "exports": {
-    "require": "./cjs/index.js",
+    "require": "./cjs/index.cjs",
     "import": "./src/index.js",
     "default": "./src/index.js"
   },
