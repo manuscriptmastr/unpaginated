@@ -75,12 +75,14 @@ Alias for [`byPage`](https://github.com/manuscriptmastr/unpaginated#bypage).
 
 // serial
 byPage(page => fetch(`/users?page=${page}`)
-  .then(res => res.json()));
+  .then(res => res.json())
+);
 
 // concurrent
 byPage(page => fetch(`/users?page=${page}`)
   .then(res => res.json()))
-  .then(({ data, total }) => ({ data, total }));
+  .then(({ data, total }) => ({ data, total })
+);
 ```
 
 ### `byOffset`
