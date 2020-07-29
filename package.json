@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "3.0.1-beta.2",
+  "version": "3.0.1-beta.3",
   "description": "Dead simple pagination",
   "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
   "bugs": {
@@ -20,22 +20,24 @@
   ],
   "type": "module",
   "main": "./cjs/index.js",
-  "module": "./esm/index.js",
+  "module": "./src/index.js",
   "exports": {
     "require": "./cjs/index.js",
-    "import": "./esm/index.js",
-    "default": "./esm/index.js"
+    "import": "./src/index.js",
+    "default": "./src/index.js"
   },
   "scripts": {
-    "test": "ava --verbose --watch"
+    "test": "ava --verbose --watch",
+    "build": "rollup --config"
   },
   "author": "Joshua Martin",
   "license": "ISC",
   "dependencies": {
-    "esm": "^3.2.25",
     "ramda": "^0.27.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
     "ava": "^3.10.1"
   }
 }
