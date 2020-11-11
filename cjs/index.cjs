@@ -1125,7 +1125,7 @@ var _assertPromise_1 = _assertPromise;
  *
  * @func
  * @memberOf R
- * @since v0.27.0
+ * @since v0.27.1
  * @category Function
  * @sig (a -> b) -> (Promise e a) -> (Promise e b)
  * @sig (a -> (Promise e b)) -> (Promise e a) -> (Promise e b)
@@ -2411,7 +2411,7 @@ var _isInteger = Number.isInteger || function _isInteger(n) {
  *
  * @func
  * @memberOf R
- * @since v0.27.0
+ * @since v0.27.1
  * @category Object
  * @typedefn Idx = [String | Int]
  * @sig [Idx] -> {a} -> [a | Undefined]
