@@ -1,6 +1,6 @@
 {
   "name": "unpaginated",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Dead simple pagination",
   "homepage": "https://github.com/manuscriptmastr/unpaginated#readme",
   "bugs": {
@@ -33,11 +33,11 @@
   "author": "Joshua Martin",
   "license": "ISC",
   "dependencies": {
-    "ramda": "^0.27.0"
+    "ramda": "^0.27.1"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^14.0.0",
-    "@rollup/plugin-node-resolve": "^8.4.0",
-    "ava": "^3.10.1"
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "ava": "^3.13.0"
   }
 }
